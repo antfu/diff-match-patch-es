@@ -30,6 +30,10 @@ export {
   DIFF_DELETE,
   DIFF_INSERT,
   DIFF_EQUAL,
+} from './diff'
+
+export {
+  diffMain as diff,
   diffCleanupEfficiency,
   diffCleanupMerge,
   diffCleanupSemantic,
@@ -47,6 +51,7 @@ export {
 } from './diff'
 
 export {
+  patchMake as patch,
   patchMake,
   patchDeepCopy,
   patchApply,
@@ -57,6 +62,7 @@ export {
 } from './patch'
 
 export {
+  matchMain as match,
   matchMain,
   matchBitap,
   matchAlphabet,

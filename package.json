@@ -12,7 +12,11 @@
     "url": "git+https://github.com/antfu/diff-match-patch-es.git"
   },
   "bugs": "https://github.com/antfu/diff-match-patch-es/issues",
-  "keywords": [],
+  "keywords": [
+    "diff-match-patch",
+    "diff",
+    "esm"
+  ],
   "sideEffects": false,
   "exports": {
     ".": {
