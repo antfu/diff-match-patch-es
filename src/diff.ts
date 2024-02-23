@@ -7,10 +7,8 @@ export const DIFF_INSERT = 1
 export const DIFF_EQUAL = 0
 
 /**
- * Class representing one diff tuple.
- * ~Attempts to look like a two-element array (which is what this used to be).~
- * Constructor returns an actual two-element array, to allow destructing @JackuB
- * See https://github.com/JackuB/diff-match-patch/issues/14 for details
+ * Create a diff tuple.
+ *
  * @param {number} op Operation, one of: DIFF_DELETE, DIFF_INSERT, DIFF_EQUAL.
  * @param {string} text Text to be deleted, inserted, or retained.
  */
