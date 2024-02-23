@@ -1,7 +1,7 @@
 {
   "name": "diff-match-patch-es",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "packageManager": "pnpm@8.15.3",
   "description": "ESM and TypeScript rewrite of Google's diff-match-patch",
   "license": "Apache-2.0",
