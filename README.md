@@ -10,7 +10,7 @@ ESM and TypeScript rewrite of Google's [diff-match-patch](https://github.com/goo
 
 ## Features
 
-- Rewritten in ESM and TypeScript, ships with type declrations
+- Rewritten in ESM and TypeScript, ships with type declarations
 - Published as dual ESM/CJS formats
 - Refactor all to pure functions, fully tree-shakable
 
