@@ -1,4 +1,5 @@
-import type { ResolvedOptions } from './types'
+import type { DiffMatchPathOptions } from './types'
+import { resolveOptions } from './options'
 
 /**
  * Locate the best instance of 'pattern' in 'text' near 'loc'.
@@ -7,7 +8,7 @@ import type { ResolvedOptions } from './types'
  * @param {number} loc The location to search around.
  * @return {number} Best match index or -1.
  */
-export function matchMain(text: string, pattern: string, loc: number, options: ResolvedOptions) {
+export function matchMain(text: string, pattern: string, loc: number, options?: DiffMatchPathOptions) {
   // Check for null inputs.
   if (text == null || pattern == null || loc == null)
     throw new Error('Null input. (match_main)')
@@ -37,11 +38,14 @@ export function matchMain(text: string, pattern: string, loc: number, options: R
  * @param {string} text The text to search.
  * @param {string} pattern The pattern to search for.
  * @param {number} loc The location to search around.
+ * @param [options] The options
  * @return {number} Best match index or -1.
  * @private
  */
-export function matchBitap(text: string, pattern: string, loc: number, options: ResolvedOptions) {
-  if (pattern.length > options.matchMaxBits)
+export function matchBitap(text: string, pattern: string, loc: number, options?: DiffMatchPathOptions) {
+  const resolved = resolveOptions(options)
+
+  if (pattern.length > resolved.matchMaxBits)
     throw new Error('Pattern too long for this browser.')
 
   // Initialise the alphabet.
@@ -60,15 +64,15 @@ export function matchBitap(text: string, pattern: string, loc: number, options: 
   function matchBitapScore(e: number, x: number): number {
     const accuracy = e / pattern.length
     const proximity = Math.abs(loc - x)
-    if (!options.matchDistance) {
+    if (!resolved.matchDistance) {
       // Dodge divide by zero error.
       return proximity ? 1.0 : accuracy
     }
-    return accuracy + (proximity / options.matchDistance)
+    return accuracy + (proximity / resolved.matchDistance)
   }
 
   // Highest score beyond which we give up.
-  let score_threshold = options.matchThreshold
+  let score_threshold = resolved.matchThreshold
   // Is there a nearby exact match? (speedup)
   let best_loc = text.indexOf(pattern, loc)
   if (best_loc !== -1) {

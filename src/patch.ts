@@ -1,5 +1,6 @@
 import {
   defaultOptions,
+  resolveOptions,
 } from './options'
 import {
   DIFF_DELETE,
@@ -19,7 +20,6 @@ import type {
   Diff,
   DiffMatchPathOptions,
   Patch,
-  ResolvedOptions,
 } from './types'
 import {
   matchMain,
@@ -251,17 +251,18 @@ export function patchDeepCopy(patches: Patch[]) {
  * @return {!Array.<string|!Array.<boolean>>} Two element Array, containing the
  *      new text and an array of boolean values.
  */
-export function patchApply(patches: Patch[], text: string, options: ResolvedOptions) {
+export function patchApply(patches: Patch[], text: string, options?: DiffMatchPathOptions) {
   if (patches.length === 0)
     return [text, []]
 
   // Deep copy the patches so that no changes are made to originals.
   patches = patchDeepCopy(patches)
 
-  const nullPadding = patchAddPadding(patches, options)
+  const resolved = resolveOptions(options)
+  const nullPadding = patchAddPadding(patches, resolved)
   text = nullPadding + text + nullPadding
 
-  patchSplitMax(patches, options)
+  patchSplitMax(patches, resolved)
   // delta keeps track of the offset between the expected and actual location
   // of the previous patch.  If there are patches expected at positions 10 and
   // 20, but the first patch was found at 12, delta is 2 and the second patch
@@ -273,20 +274,20 @@ export function patchApply(patches: Patch[], text: string, options: ResolvedOpti
     const text1 = diffText1(patches[x].diffs)
     let start_loc
     let end_loc = -1
-    if (text1.length > options.matchMaxBits) {
+    if (text1.length > resolved.matchMaxBits) {
       // patch_splitMax will only provide an oversized pattern in the case of
       // a monster delete.
       start_loc = matchMain(
         text,
-        text1.substring(0, options.matchMaxBits),
+        text1.substring(0, resolved.matchMaxBits),
         expected_loc,
         options,
       )
       if (start_loc !== -1) {
         end_loc = matchMain(
           text,
-          text1.substring(text1.length - options.matchMaxBits),
-          expected_loc + text1.length - options.matchMaxBits,
+          text1.substring(text1.length - resolved.matchMaxBits),
+          expected_loc + text1.length - resolved.matchMaxBits,
           options,
         )
         if (end_loc === -1 || start_loc >= end_loc) {
@@ -312,7 +313,7 @@ export function patchApply(patches: Patch[], text: string, options: ResolvedOpti
       if (end_loc === -1)
         text2 = text.substring(start_loc, start_loc + text1.length)
       else
-        text2 = text.substring(start_loc, end_loc + options.matchMaxBits)
+        text2 = text.substring(start_loc, end_loc + resolved.matchMaxBits)
 
       if (text1 === text2) {
         // Perfect match, just shove the replacement text in.
@@ -324,9 +325,9 @@ export function patchApply(patches: Patch[], text: string, options: ResolvedOpti
         // Imperfect match.  Run a diff to get a framework of equivalent
         // indices.
         const diffs = diffMain(text1, text2, options, false)
-        if (text1.length > options.matchMaxBits
+        if (text1.length > resolved.matchMaxBits
           && diffLevenshtein(diffs) / text1.length
-          > options.patchDeleteThreshold) {
+          > resolved.patchDeleteThreshold) {
           // The end points match, but the content is unacceptably bad.
           results[x] = false
         }
@@ -364,8 +365,10 @@ export function patchApply(patches: Patch[], text: string, options: ResolvedOpti
  * @param {Patch[]} patches Array of Patch objects.
  * @return {string} The padding string added to each side.
  */
-export function patchAddPadding(patches: Patch[], options: ResolvedOptions) {
-  const paddingLength = options.patchMargin
+export function patchAddPadding(patches: Patch[], options: DiffMatchPathOptions = {}) {
+  const {
+    patchMargin: paddingLength = defaultOptions.patchMargin,
+  } = options
   let nullPadding = ''
   for (let x = 1; x <= paddingLength; x++)
     nullPadding += String.fromCharCode(x)
@@ -423,12 +426,10 @@ export function patchAddPadding(patches: Patch[], options: ResolvedOptions) {
  * Intended to be called only from within patch_apply.
  * @param {Patch[]} patches Array of Patch objects.
  */
-export function patchSplitMax(patches: Patch[], options: ResolvedOptions) {
-  const {
-    matchMaxBits: patchSize = defaultOptions.matchMaxBits,
-  } = options
+export function patchSplitMax(patches: Patch[], options?: DiffMatchPathOptions) {
+  const resolved = resolveOptions(options)
   for (let x = 0; x < patches.length; x++) {
-    if (patches[x].length1 <= patchSize)
+    if (patches[x].length1 <= resolved.matchMaxBits)
       continue
 
     const bigpatch = patches[x]
@@ -448,7 +449,7 @@ export function patchSplitMax(patches: Patch[], options: ResolvedOptions) {
         patch.diffs.push(createDiff(DIFF_EQUAL, precontext))
       }
       while (bigpatch.diffs.length !== 0
-        && patch.length1 < patchSize - options.patchMargin) {
+        && patch.length1 < resolved.matchMaxBits - resolved.patchMargin) {
         const diff_type = bigpatch.diffs[0][0]
         let diff_text = bigpatch.diffs[0][1]
         if (diff_type === DIFF_INSERT) {
@@ -460,7 +461,7 @@ export function patchSplitMax(patches: Patch[], options: ResolvedOptions) {
         }
         else if (diff_type === DIFF_DELETE && patch.diffs.length === 1
           && patch.diffs[0][0] === DIFF_EQUAL
-          && diff_text.length > 2 * patchSize) {
+          && diff_text.length > 2 * resolved.matchMaxBits) {
           // This is a large deletion.  Let it pass in one chunk.
           patch.length1 += diff_text.length
           start1 += diff_text.length
@@ -470,7 +471,7 @@ export function patchSplitMax(patches: Patch[], options: ResolvedOptions) {
         }
         else {
           // Deletion or equality.  Only take as much as we can stomach.
-          diff_text = diff_text.substring(0, patchSize - patch.length1 - options.patchMargin)
+          diff_text = diff_text.substring(0, resolved.matchMaxBits - patch.length1 - resolved.patchMargin)
           patch.length1 += diff_text.length
           start1 += diff_text.length
           if (diff_type === DIFF_EQUAL) {
@@ -492,10 +493,9 @@ export function patchSplitMax(patches: Patch[], options: ResolvedOptions) {
       }
       // Compute the head context for the next patch.
       precontext = diffText2(patch.diffs)
-      precontext = precontext.substring(precontext.length - options.patchMargin)
+      precontext = precontext.substring(precontext.length - resolved.patchMargin)
       // Append the end context for this patch.
-      const postcontext = diffText1(bigpatch.diffs)
-        .substring(0, options.patchMargin)
+      const postcontext = diffText1(bigpatch.diffs).substring(0, resolved.patchMargin)
       if (postcontext !== '') {
         patch.length1 += postcontext.length
         patch.length2 += postcontext.length
