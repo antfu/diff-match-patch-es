@@ -48,6 +48,8 @@ export {
   diffText2,
   diffToDelta,
   diffXIndex,
+  diffLinesToChars,
+  diffCharsToLines,
 } from './diff'
 
 export {
