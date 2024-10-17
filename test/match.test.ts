@@ -1,13 +1,13 @@
 import { expect, it } from 'vitest'
 
 import {
-  resolveOptions,
-} from '../src/options'
-import {
   matchAlphabet,
   matchBitap,
   matchMain,
 } from '../src/match'
+import {
+  resolveOptions,
+} from '../src/options'
 
 it('matchAlphabet', () => {
   // Initialise the bitmasks for Bitap.

@@ -109,7 +109,8 @@ export function matchBitap(text: string, pattern: string, loc: number, options?:
     let start = Math.max(1, loc - bin_mid + 1)
     const finish = Math.min(loc + bin_mid, text.length) + pattern.length
 
-    const rd: number[] = Array(finish + 2)
+    // eslint-disable-next-line unicorn/no-new-array
+    const rd: number[] = new Array(finish + 2)
     rd[finish + 1] = (1 << d) - 1
     for (let j = finish; j >= start; j--) {
       // The alphabet (s) is a sparse hash, so the following line generates

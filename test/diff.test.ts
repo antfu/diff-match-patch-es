@@ -1,3 +1,4 @@
+import type { Diff } from '../src/types'
 import { expect, it } from 'vitest'
 import {
   DIFF_DELETE,
@@ -26,7 +27,6 @@ import {
 import {
   resolveOptions,
 } from '../src/options'
-import type { Diff } from '../src/types'
 
 /**
  * Diff Match and Patch -- Test Harness

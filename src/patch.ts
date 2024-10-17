@@ -1,12 +1,13 @@
+import type {
+  Diff,
+  DiffMatchPathOptions,
+  Patch,
+} from './types'
 import {
-  defaultOptions,
-  resolveOptions,
-} from './options'
-import {
+  createDiff,
   DIFF_DELETE,
   DIFF_EQUAL,
   DIFF_INSERT,
-  createDiff,
   diffCleanupEfficiency,
   diffCleanupSemantic,
   diffCleanupSemanticLossless,
@@ -16,14 +17,13 @@ import {
   diffText2,
   diffXIndex,
 } from './diff'
-import type {
-  Diff,
-  DiffMatchPathOptions,
-  Patch,
-} from './types'
 import {
   matchMain,
 } from './match'
+import {
+  defaultOptions,
+  resolveOptions,
+} from './options'
 
 /**
  * Increase the context until it is unique,
@@ -174,7 +174,7 @@ export function patchMake(a: string | Diff[], opt_b?: string | Diff[], opt_c?: s
         patch.diffs[patchDiffLength++] = diffs[x]
         postpatch_text = postpatch_text.substring(0, char_count2)
         + postpatch_text.substring(char_count2
-        + diff_text.length)
+          + diff_text.length)
         break
       case DIFF_EQUAL:
         if (diff_text.length <= 2 * resolved.patchMargin
@@ -500,10 +500,12 @@ export function patchSplitMax(patches: Patch[], options?: DiffMatchPathOptions) 
         patch.length1 += postcontext.length
         patch.length2 += postcontext.length
         if (patch.diffs.length !== 0
-          && patch.diffs[patch.diffs.length - 1][0] === DIFF_EQUAL)
+          && patch.diffs[patch.diffs.length - 1][0] === DIFF_EQUAL) {
           patch.diffs[patch.diffs.length - 1][1] += postcontext
-        else
+        }
+        else {
           patch.diffs.push(createDiff(DIFF_EQUAL, postcontext))
+        }
       }
       if (!empty)
         patches.splice(++x, 0, patch)
@@ -577,7 +579,7 @@ export function patchFromText(textline: string) {
       try {
         line = decodeURI(text[textPointer].substring(1))
       }
-      catch (ex) {
+      catch {
         // Malformed URI sequence.
         throw new Error(`Illegal escape in patch_fromText: ${line}`)
       }

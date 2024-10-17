@@ -6,6 +6,9 @@ import {
   diffMain,
 } from '../src/diff'
 import {
+  resolveOptions,
+} from '../src/options'
+import {
   createPatch,
   patchAddContext,
   patchAddPadding,
@@ -15,9 +18,6 @@ import {
   patchSplitMax,
   patchToText,
 } from '../src/patch'
-import {
-  resolveOptions,
-} from '../src/options'
 
 it('patchObj', () => {
   // Patch Object.

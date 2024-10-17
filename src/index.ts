@@ -24,16 +24,14 @@
  * Rewritten to TypeScript and ES Module by Anthony Fu (@antfu)
  */
 
-export * from './types'
-
 export {
   DIFF_DELETE,
-  DIFF_INSERT,
   DIFF_EQUAL,
+  DIFF_INSERT,
 } from './diff'
 
 export {
-  diffMain as diff,
+  diffCharsToLines,
   diffCleanupEfficiency,
   diffCleanupMerge,
   diffCleanupSemantic,
@@ -42,35 +40,37 @@ export {
   diffCommonSuffix,
   diffFromDelta,
   diffLevenshtein,
+  diffLinesToChars,
+  diffMain as diff,
   diffMain,
   diffPrettyHtml,
   diffText1,
   diffText2,
   diffToDelta,
   diffXIndex,
-  diffLinesToChars,
-  diffCharsToLines,
 } from './diff'
 
 export {
-  patchMake as patch,
-  patchMake,
-  patchDeepCopy,
-  patchApply,
-  patchAddPadding,
-  patchSplitMax,
-  patchFromText,
-  patchToText,
-} from './patch'
-
-export {
+  matchAlphabet,
+  matchBitap,
   matchMain as match,
   matchMain,
-  matchBitap,
-  matchAlphabet,
 } from './match'
 
 export {
-  resolveOptions,
   defaultOptions,
+  resolveOptions,
 } from './options'
+
+export {
+  patchAddPadding,
+  patchApply,
+  patchDeepCopy,
+  patchFromText,
+  patchMake as patch,
+  patchMake,
+  patchSplitMax,
+  patchToText,
+} from './patch'
+
+export * from './types'

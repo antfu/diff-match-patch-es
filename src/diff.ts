@@ -1,6 +1,6 @@
+import type { Diff, DiffMatchPathOptions, DiffOperation, ResolvedOptions } from './types'
 /* eslint-disable unicorn/no-new-array */
 import { defaultOptions, resolveOptions } from './options'
-import type { Diff, DiffMatchPathOptions, DiffOperation, ResolvedOptions } from './types'
 
 export const DIFF_DELETE = -1
 export const DIFF_INSERT = 1
@@ -505,8 +505,9 @@ export function diffCommonPrefix(text1: string, text2: string): number {
 export function diffCommonSuffix(text1: string, text2: string): number {
 // Quick check for common null cases.
   if (!text1 || !text2
-    || text1.charAt(text1.length - 1) !== text2.charAt(text2.length - 1))
+    || text1.charAt(text1.length - 1) !== text2.charAt(text2.length - 1)) {
     return 0
+  }
 
   // Binary search.
   // Performance analysis: https://neil.fraser.name/news/2007/10/09/
@@ -781,7 +782,7 @@ export function diffCleanupSemantic(diffs: Diff[]) {
   }
 }
 
-const nonAlphaNumericRegex_ = /[^a-zA-Z0-9]/
+const nonAlphaNumericRegex_ = /[^a-z0-9]/i
 const whitespaceRegex_ = /\s/
 const linebreakRegex_ = /[\r\n]/
 const blanklineEndRegex_ = /\n\r?\n$/
@@ -976,7 +977,7 @@ export function diffCleanupEfficiency(diffs: Diff[], options: DiffMatchPathOptio
        */
       if (lastEquality && ((pre_ins && pre_del && post_ins && post_del)
         || ((lastEquality.length < diffEditCost / 2)
-        && booleanCount(pre_ins, pre_del, post_ins, post_del) === 3))) {
+          && booleanCount(pre_ins, pre_del, post_ins, post_del) === 3))) {
         // Duplicate record.
         diffs.splice(equalities[equalitiesLength - 1], 0, createDiff(DIFF_DELETE, lastEquality))
         // Change second copy to insert.
@@ -1173,8 +1174,7 @@ export function diffPrettyHtml(diffs: Diff[]): string {
   for (let x = 0; x < diffs.length; x++) {
     const op = diffs[x][0] // Operation (insert, delete, equal)
     const data = diffs[x][1] // Text of change.
-    const text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;')
-      .replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>')
+    const text = data.replace(pattern_amp, '&amp;').replace(pattern_lt, '&lt;').replace(pattern_gt, '&gt;').replace(pattern_para, '&para;<br>')
     switch (op) {
       case DIFF_INSERT:
         html[x] = `<ins style="background:#e6ffe6;">${text}</ins>`
@@ -1298,7 +1298,7 @@ export function diffFromDelta(text1: string, delta: string) {
         try {
           diffs[diffsLength++] = createDiff(DIFF_INSERT, decodeURI(param))
         }
-        catch (ex) {
+        catch {
           // Malformed URI sequence.
           throw new Error(`Illegal escape in diff_fromDelta: ${param}`)
         }
