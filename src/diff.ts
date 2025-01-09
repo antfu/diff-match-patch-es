@@ -710,9 +710,11 @@ export function diffCleanupSemantic(diffs: Diff[]) {
 
       // Eliminate an equality that is smaller or equal to the edits on both
       // sides of it.
-      if (lastEquality && (lastEquality.length
-        <= Math.max(length_insertions1, length_deletions1))
-        && (lastEquality.length <= Math.max(length_insertions2, length_deletions2))) {
+      if (
+        lastEquality
+        && (lastEquality.length <= Math.max(length_insertions1, length_deletions1))
+        && (lastEquality.length <= Math.max(length_insertions2, length_deletions2))
+      ) {
         // Duplicate record.
         diffs.splice(equalities[equalitiesLength - 1], 0, createDiff(DIFF_DELETE, lastEquality))
         // Change second copy to insert.

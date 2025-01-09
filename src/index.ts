@@ -31,6 +31,7 @@ export {
 } from './diff'
 
 export {
+  diffMain as diff,
   diffCharsToLines,
   diffCleanupEfficiency,
   diffCleanupMerge,
@@ -41,7 +42,6 @@ export {
   diffFromDelta,
   diffLevenshtein,
   diffLinesToChars,
-  diffMain as diff,
   diffMain,
   diffPrettyHtml,
   diffText1,
@@ -51,9 +51,9 @@ export {
 } from './diff'
 
 export {
+  matchMain as match,
   matchAlphabet,
   matchBitap,
-  matchMain as match,
   matchMain,
 } from './match'
 
@@ -63,11 +63,11 @@ export {
 } from './options'
 
 export {
+  patchMake as patch,
   patchAddPadding,
   patchApply,
   patchDeepCopy,
   patchFromText,
-  patchMake as patch,
   patchMake,
   patchSplitMax,
   patchToText,
