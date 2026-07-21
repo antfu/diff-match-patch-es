@@ -167,14 +167,14 @@ export function patchMake(a: string | Diff[], opt_b?: string | Diff[], opt_c?: s
         patch.diffs[patchDiffLength++] = diffs[x]
         patch.length2 += diff_text.length
         postpatch_text = postpatch_text.substring(0, char_count2) + diff_text
-        + postpatch_text.substring(char_count2)
+          + postpatch_text.substring(char_count2)
         break
       case DIFF_DELETE:
         patch.length1 += diff_text.length
         patch.diffs[patchDiffLength++] = diffs[x]
         postpatch_text = postpatch_text.substring(0, char_count2)
-        + postpatch_text.substring(char_count2
-          + diff_text.length)
+          + postpatch_text.substring(char_count2
+            + diff_text.length)
         break
       case DIFF_EQUAL:
         if (diff_text.length <= 2 * resolved.patchMargin
@@ -318,8 +318,8 @@ export function patchApply(patches: Patch[], text: string, options?: DiffMatchPa
       if (text1 === text2) {
         // Perfect match, just shove the replacement text in.
         text = text.substring(0, start_loc)
-        + diffText2(patches[x].diffs)
-        + text.substring(start_loc + text1.length)
+          + diffText2(patches[x].diffs)
+          + text.substring(start_loc + text1.length)
       }
       else {
         // Imperfect match.  Run a diff to get a framework of equivalent
@@ -341,11 +341,11 @@ export function patchApply(patches: Patch[], text: string, options?: DiffMatchPa
               index2 = diffXIndex(diffs, index1)
             if (mod[0] === DIFF_INSERT) { // Insertion
               text = text.substring(0, start_loc + index2) + mod[1]
-              + text.substring(start_loc + index2)
+                + text.substring(start_loc + index2)
             }
             else if (mod[0] === DIFF_DELETE) { // Deletion
               text = text.substring(0, start_loc + index2)
-              + text.substring(start_loc + diffXIndex(diffs, index1 + mod[1].length))
+                + text.substring(start_loc + diffXIndex(diffs, index1 + mod[1].length))
             }
             if (mod[0] !== DIFF_DELETE)
               index1 += mod[1].length

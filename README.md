@@ -11,7 +11,7 @@ ESM and TypeScript rewrite of Google's [diff-match-patch](https://github.com/goo
 ## Features
 
 - Rewritten in ESM and TypeScript, ships with type declarations
-- Published as dual ESM/CJS formats
+- Published as pure ESM
 - Refactor all to pure functions, fully tree-shakable
 
 ## Migration
@@ -42,11 +42,15 @@ const result = diff('hello', 'world', { diffTimeout: 1 })
 
 Well, the code source repo from Google [hasn't been updated for 5 years](https://github.com/google/diff-match-patch), and the npm package `diff-match-patch` [hasn't been published for 4 years](https://github.com/JackuB/diff-match-patch). And the code is not ESM nor tree-shakable. While this library is a composition of `diff` `patch` and `match` functions, sometimes you don't need all of them but since all functions were bound to a single class, all the code has to be included in the bundle. It's probably not a big deal as this whole library is still relatively small, but it's a bit annoying to me when you know something wasn't optimal. So I took an afternoon porting and rewriting the library to ESM and TypeScript. Helpfully it will lead to better maintainability and help the community to move forward with the modern JavaScript ecosystem.
 
+## Note for Developers
+
+Releases are published from CI using [npm Trusted Publisher](https://github.com/e18e/ecosystem-issues/issues/201) (OIDC), so no long-lived npm token is needed. Run `pnpm run release` to bump the version and push the tag — the `Release` GitHub Actions workflow takes care of building and publishing.
+
 ## Sponsors
 
 <p align="center">
   <a href="https://cdn.jsdelivr.net/gh/antfu/static/sponsors.svg">
-    <img src='https://cdn.jsdelivr.net/gh/antfu/static/sponsors.svg'/>
+    <img src='https://cdn.jsdelivr.net/gh/antfu/static/sponsors.svg' alt='Sponsors'/>
   </a>
 </p>
 

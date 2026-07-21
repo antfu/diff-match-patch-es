@@ -595,9 +595,9 @@ it('diffMain', () => {
     a += a
     b += b
   }
-  const startTime = (new Date()).getTime()
+  const startTime = Date.now()
   diffMain(a, b, options)
-  const endTime = (new Date()).getTime()
+  const endTime = Date.now()
   // Test that we took at least the timeout period.
   expect(options.diffTimeout * 1000 <= endTime - startTime).toBe(true)
   // Test that we didn't take forever (be forgiving).

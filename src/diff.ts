@@ -44,7 +44,7 @@ export function diffMain(
     if (resolved.diffTimeout <= 0)
       opt_deadline = Number.MAX_VALUE
     else
-      opt_deadline = (new Date()).getTime() + resolved.diffTimeout * 1000
+      opt_deadline = Date.now() + resolved.diffTimeout * 1000
   }
 
   const deadline = opt_deadline
@@ -263,7 +263,7 @@ export function diffBisect(text1: string, text2: string, options: ResolvedOption
   let k2end = 0
   for (let d = 0; d < max_d; d++) {
     // Bail out if deadline is reached.
-    if ((new Date()).getTime() > deadline)
+    if (Date.now() > deadline)
       break
 
     // Walk the front path one step.
@@ -421,7 +421,7 @@ export function diffLinesToChars(text1: string, text2: string) {
       let line = text.substring(lineStart, lineEnd + 1)
 
       if (lineHash.hasOwnProperty
-        ? Object.prototype.hasOwnProperty.call(lineHash, line)
+        ? Object.hasOwn(lineHash, line)
         : (lineHash[line] !== undefined)) {
         chars += String.fromCharCode(lineHash[line])
       }
@@ -620,7 +620,7 @@ export function diffHalfMatch(text1: string, text2: string, options: ResolvedOpt
       const suffixLength = diffCommonSuffix(longtext.substring(0, i), shorttext.substring(0, j))
       if (best_common.length < suffixLength + prefixLength) {
         best_common = shorttext.substring(j - suffixLength, j)
-        + shorttext.substring(j, j + prefixLength)
+          + shorttext.substring(j, j + prefixLength)
         best_longtext_a = longtext.substring(0, i - suffixLength)
         best_longtext_b = longtext.substring(i + prefixLength)
         best_shorttext_a = shorttext.substring(0, j - suffixLength)
@@ -1105,8 +1105,8 @@ export function diffCleanupMerge(diffs: Diff[]) {
         - diffs[pointer - 1][1].length) === diffs[pointer - 1][1]) {
         // Shift the edit over the previous equality.
         diffs[pointer][1] = diffs[pointer - 1][1]
-        + diffs[pointer][1].substring(0, diffs[pointer][1].length
-        - diffs[pointer - 1][1].length)
+          + diffs[pointer][1].substring(0, diffs[pointer][1].length
+          - diffs[pointer - 1][1].length)
         diffs[pointer + 1][1] = diffs[pointer - 1][1] + diffs[pointer + 1][1]
         diffs.splice(pointer - 1, 1)
         changes = true
