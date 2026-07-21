@@ -1,5 +1,16 @@
+ignoreWorkspaceRootCheck: true
+minimumReleaseAgeExclude:
+  - bumpp@12.0.0
+
+shellEmulator: true
+trustPolicy: no-downgrade
+
 packages:
   - playground
   - docs
   - packages/*
   - examples/*
+
+allowBuilds:
+  esbuild: true
+  simple-git-hooks: true

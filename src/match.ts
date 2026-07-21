@@ -121,8 +121,8 @@ export function matchBitap(text: string, pattern: string, loc: number, options?:
       }
       else { // Subsequent passes: fuzzy match.
         rd[j] = (((rd[j + 1] << 1) | 1) & charMatch)
-        | (((last_rd[j + 1] | last_rd[j]) << 1) | 1)
-        | last_rd[j + 1]
+          | (((last_rd[j + 1] | last_rd[j]) << 1) | 1)
+          | last_rd[j + 1]
       }
       if (rd[j] & matchmask) {
         const score = matchBitapScore(d, j - 1)
