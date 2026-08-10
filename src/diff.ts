@@ -387,7 +387,9 @@ function diffBisectSplit(text1: string, text2: string, options: ResolvedOptions,
  */
 export function diffLinesToChars(text1: string, text2: string) {
   const lineArray = [] // e.g. lineArray[4] == 'Hello\n'
-  const lineHash: any = {} // e.g. lineHash['Hello\n'] == 4
+  // Use a null-prototype object so keys like '__proto__' are treated as
+  // plain string keys instead of being special-cased as the prototype.
+  const lineHash: Record<string, number> = Object.create(null) // e.g. lineHash['Hello\n'] == 4
 
   // Allocate 2/3rds of the space for text1, the rest for text2.
   let maxLines = 40000
@@ -420,9 +422,7 @@ export function diffLinesToChars(text1: string, text2: string) {
 
       let line = text.substring(lineStart, lineEnd + 1)
 
-      if (lineHash.hasOwnProperty
-        ? Object.hasOwn(lineHash, line)
-        : (lineHash[line] !== undefined)) {
+      if (lineHash[line] !== undefined) {
         chars += String.fromCharCode(lineHash[line])
       }
       else {
