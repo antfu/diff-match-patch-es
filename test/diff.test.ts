@@ -181,6 +181,16 @@ it('diffLinesToChars', () => {
   )
 })
 
+it('diffLinesToChars does not special-case Object.prototype keys like __proto__', () => {
+  // Regression test: the internal line hash used to be a plain `{}`, which
+  // treats '__proto__' as the object's prototype instead of an own key.
+  // That caused identical lines to be assigned different char codes and
+  // duplicate entries in the line array.
+  const result = diffLinesToChars('__proto__', '__proto__')
+  expect(result.chars1).toEqual(result.chars2)
+  expect(result.lineArray).toEqual(['', '__proto__'])
+})
+
 it('diffCharsToLines', () => {
   // Convert chars up to lines.
   let diffs: Diff[] = [
