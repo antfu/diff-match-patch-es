@@ -349,6 +349,11 @@ it('diffCleanupSemanticLossless', () => {
   diffs = [[DIFF_EQUAL, 'The xxx. The '], [DIFF_INSERT, 'zzz. The '], [DIFF_EQUAL, 'yyy.']]
   diffCleanupSemanticLossless(diffs)
   expect(diffs).toEqual([[DIFF_EQUAL, 'The xxx.'], [DIFF_INSERT, ' The zzz.'], [DIFF_EQUAL, ' The yyy.']])
+
+  // Empty operations should not hang in infinite loop.
+  diffs = [[DIFF_EQUAL, 'a'], [DIFF_DELETE, ''], [DIFF_EQUAL, '']]
+  diffCleanupSemanticLossless(diffs)
+  expect(diffs).toEqual([[DIFF_EQUAL, 'a'], [DIFF_DELETE, ''], [DIFF_EQUAL, '']])
 })
 
 it('diffCleanupSemantic', () => {

@@ -877,7 +877,7 @@ export function diffCleanupSemanticLossless(diffs: Diff[]) {
       let bestEquality2 = equality2
       let bestScore = diffCleanupSemanticScore(equality1, edit)
         + diffCleanupSemanticScore(edit, equality2)
-      while (edit.charAt(0) === equality2.charAt(0)) {
+      while (edit && equality2 && edit.charAt(0) === equality2.charAt(0)) {
         equality1 += edit.charAt(0)
         edit = edit.substring(1) + equality2.charAt(0)
         equality2 = equality2.substring(1)
