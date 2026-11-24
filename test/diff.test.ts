@@ -520,6 +520,22 @@ it('diffDelta', () => {
   expect(diffFromDelta('', delta)).toEqual(diffs)
 })
 
+it('diffMain does not split surrogate pairs', () => {
+  // https://github.com/antfu/diff-match-patch-es/issues/6
+  const diffs = diffMain('😀', '😃')
+
+  // No tuple may hold an unpaired surrogate, so that the texts remain URI-encodable.
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+
+  // The diff still reconstructs both texts.
+  expect(diffRebuildTexts(diffs)).toEqual(['😀', '😃'])
+
+  // The delta round-trips.
+  const delta = diffToDelta(diffs)
+  expect(diffFromDelta('😀', delta)).toEqual(diffs)
+})
+
 it('diffXIndex', () => {
   // Translate a location in text1 to text2.
   // Translation on equality.

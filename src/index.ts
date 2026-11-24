@@ -37,6 +37,7 @@ export {
   diffCleanupMerge,
   diffCleanupSemantic,
   diffCleanupSemanticLossless,
+  diffCleanupSurrogatePairs,
   diffCommonPrefix,
   diffCommonSuffix,
   diffFromDelta,

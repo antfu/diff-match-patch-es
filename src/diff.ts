@@ -85,6 +85,7 @@ export function diffMain(
     diffs.push(createDiff(DIFF_EQUAL, commonsuffix))
 
   diffCleanupMerge(diffs)
+  diffCleanupSurrogatePairs(diffs)
   return diffs
 }
 
@@ -1125,6 +1126,133 @@ export function diffCleanupMerge(diffs: Diff[]) {
   // If shifts were made, the diff needs reordering and another shift sweep.
   if (changes)
     diffCleanupMerge(diffs)
+}
+
+/**
+ * Rejoin UTF-16 surrogate pairs that were split across consecutive tuples.
+ * Diffing operates on code units and can cut between a high and a low
+ * surrogate, leaving unpaired surrogates that diffToDelta and patchToText
+ * cannot URI-encode. Each rewrite moves the pair halves into a single
+ * tuple while preserving both concatenated texts; boundaries that cannot
+ * be rejoined safely are left untouched.
+ * @param {Diff[]} diffs Array of diff tuples.
+ */
+export function diffCleanupSurrogatePairs(diffs: Diff[]) {
+  for (let i = 0; i < diffs.length - 1; i++) {
+    const a = diffs[i]
+    const b = diffs[i + 1]
+    const aText = a[1]
+    const bText = b[1]
+    if (!aText.length || !bText.length)
+      continue
+    const h = aText.charAt(aText.length - 1)
+    const high = aText.charCodeAt(aText.length - 1)
+    const low = bText.charCodeAt(0)
+    if (high < 0xD800 || high > 0xDBFF || low < 0xDC00 || low > 0xDFFF)
+      continue
+
+    const aOp = a[0]
+    const bOp = b[0]
+    if (aOp === bOp) {
+      // Same operation on both sides, so shifting the boundary is free.
+      a[1] = aText.slice(0, -1)
+      b[1] = h + bText
+      continue
+    }
+
+    if (aOp === DIFF_EQUAL && bOp === DIFF_DELETE) {
+      // 'hl' is one code point in text1: hand 'h' to the delete. The equal
+      // also produced 'h' into text2, so the next text2 producer must
+      // supply it: an insert, or an equal whose own 'l' pairs in text2
+      // with 'h' from the delete's tail.
+      const j = diffs[i + 2]
+      if (!j)
+        continue
+      if (j[0] === DIFF_INSERT) {
+        a[1] = aText.slice(0, -1)
+        b[1] = h + bText
+        j[1] = h + j[1]
+      }
+      else if (
+        j[0] === DIFF_EQUAL
+        && j[1].charCodeAt(0) >= 0xDC00
+        && j[1].charCodeAt(0) <= 0xDFFF
+      ) {
+        const next = h + bText
+        const tail = next.charCodeAt(next.length - 1)
+        if (tail < 0xD800 || tail > 0xDBFF)
+          continue
+        a[1] = aText.slice(0, -1)
+        b[1] = next.slice(0, -1)
+        j[1] = h + j[1]
+      }
+    }
+    else if (aOp === DIFF_EQUAL && bOp === DIFF_INSERT) {
+      // 'hl' is one code point in text2: hand 'h' to the insert. The equal
+      // also consumed 'h' from text1, so the next text1 consumer must
+      // supply it, which only a delete can do without touching text2.
+      const j = diffs[i + 2]
+      if (!j || j[0] !== DIFF_DELETE)
+        continue
+      a[1] = aText.slice(0, -1)
+      b[1] = h + bText
+      j[1] = h + j[1]
+    }
+    else if (aOp === DIFF_DELETE && bOp === DIFF_EQUAL) {
+      // 'hl' is one code point in text1: hand 'h' to the equal. The 'h'
+      // that pairs with the equal's 'l' in text2 lives in the previous
+      // text2 producer and must move along.
+      const p = diffs[i - 1]
+      if (!p || !p[1].length)
+        continue
+      const pHigh = p[1].charCodeAt(p[1].length - 1)
+      if (pHigh < 0xD800 || pHigh > 0xDBFF)
+        continue
+      if (p[0] === DIFF_INSERT) {
+        p[1] = p[1].slice(0, -1)
+        a[1] = aText.slice(0, -1)
+        b[1] = h + bText
+      }
+      else if (p[0] === DIFF_EQUAL) {
+        // The stripped 'h' is still needed in text1: the delete absorbs it.
+        p[1] = p[1].slice(0, -1)
+        a[1] = h + aText.slice(0, -1)
+        b[1] = h + bText
+      }
+    }
+    else if (aOp === DIFF_INSERT && bOp === DIFF_EQUAL) {
+      // Mirror image of DIFF_DELETE/DIFF_EQUAL on the other text: the 'h'
+      // that pairs with the equal's 'l' in text1 lives in the previous
+      // text1 consumer.
+      const p = diffs[i - 1]
+      if (!p || !p[1].length)
+        continue
+      const pHigh = p[1].charCodeAt(p[1].length - 1)
+      if (pHigh < 0xD800 || pHigh > 0xDBFF)
+        continue
+      if (p[0] === DIFF_DELETE) {
+        p[1] = p[1].slice(0, -1)
+        a[1] = aText.slice(0, -1)
+        b[1] = h + bText
+      }
+      else if (p[0] === DIFF_EQUAL) {
+        // The stripped 'h' is still needed in text2: the insert absorbs it.
+        p[1] = p[1].slice(0, -1)
+        a[1] = h + aText.slice(0, -1)
+        b[1] = h + bText
+      }
+    }
+    // For DIFF_DELETE followed by DIFF_INSERT (or the reverse), 'h' and 'l'
+    // live in different texts, so there is no shared code point to rejoin.
+  }
+
+  // Drop tuples emptied by the boundary moves. diffCleanupMerge would do
+  // this too, but it also re-factors common prefixes between change tuples
+  // and could split the pairs this pass just rejoined.
+  for (let i = diffs.length - 1; i >= 0; i--) {
+    if (!diffs[i][1])
+      diffs.splice(i, 1)
+  }
 }
 
 /**
