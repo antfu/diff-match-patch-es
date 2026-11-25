@@ -536,6 +536,16 @@ it('diffMain does not split surrogate pairs', () => {
   expect(diffFromDelta('😀', delta)).toEqual(diffs)
 })
 
+it('diffMain merges equal operations emptied by surrogate cleanup', () => {
+  const diffs = diffMain('b😃', '👍🏽')
+
+  for (let i = 1; i < diffs.length; i++)
+    expect(diffs[i][0]).not.toBe(diffs[i - 1][0])
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+  expect(diffRebuildTexts(diffs)).toEqual(['b😃', '👍🏽'])
+})
+
 it('diffXIndex', () => {
   // Translate a location in text1 to text2.
   // Translation on equality.

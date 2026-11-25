@@ -25,6 +25,14 @@ import {
   resolveOptions,
 } from './options'
 
+function isInsidePair(text: string, index: number) {
+  if (index <= 0 || index >= text.length)
+    return false
+  const high = text.charCodeAt(index - 1)
+  const low = text.charCodeAt(index)
+  return high >= 0xD800 && high <= 0xDBFF && low >= 0xDC00 && low <= 0xDFFF
+}
+
 /**
  * Increase the context until it is unique,
  * but don't let the pattern expand beyond matchMaxBits.
@@ -58,12 +66,18 @@ export function patchAddContext(patch: Patch, text: string, options: DiffMatchPa
   padding += patchMargin
 
   // Add the prefix.
-  const prefix = text.substring(patch.start2 - padding, patch.start2)
+  let prefixStart = Math.max(0, patch.start2 - padding)
+  if (isInsidePair(text, prefixStart))
+    prefixStart--
+  const prefix = text.substring(prefixStart, patch.start2)
   if (prefix)
     patch.diffs.unshift(createDiff(DIFF_EQUAL, prefix))
 
   // Add the suffix.
-  const suffix = text.substring(patch.start2 + patch.length1, patch.start2 + patch.length1 + padding)
+  let suffixEnd = patch.start2 + patch.length1 + padding
+  if (isInsidePair(text, suffixEnd))
+    suffixEnd++
+  const suffix = text.substring(patch.start2 + patch.length1, suffixEnd)
   if (suffix)
     patch.diffs.push(createDiff(DIFF_EQUAL, suffix))
 

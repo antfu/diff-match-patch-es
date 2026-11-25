@@ -783,6 +783,7 @@ export function diffCleanupSemantic(diffs: Diff[]) {
     }
     pointer++
   }
+  diffCleanupSurrogatePairs(diffs)
 }
 
 const nonAlphaNumericRegex_ = /[^a-z0-9]/i
@@ -1007,6 +1008,7 @@ export function diffCleanupEfficiency(diffs: Diff[], options: DiffMatchPathOptio
 
   if (changes)
     diffCleanupMerge(diffs)
+  diffCleanupSurrogatePairs(diffs)
 }
 
 /**
@@ -1252,6 +1254,12 @@ export function diffCleanupSurrogatePairs(diffs: Diff[]) {
   for (let i = diffs.length - 1; i >= 0; i--) {
     if (!diffs[i][1])
       diffs.splice(i, 1)
+  }
+  for (let i = diffs.length - 1; i > 0; i--) {
+    if (diffs[i][0] === diffs[i - 1][0]) {
+      diffs[i - 1][1] += diffs[i][1]
+      diffs.splice(i, 1)
+    }
   }
 }
 
