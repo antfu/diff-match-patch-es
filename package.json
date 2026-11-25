@@ -6,12 +6,12 @@
   "description": "ESM and TypeScript rewrite of Google's diff-match-patch",
   "license": "Apache-2.0",
   "funding": "https://github.com/sponsors/antfu",
-  "homepage": "https://github.com/antfu/diff-match-patch-es#readme",
+  "homepage": "https://github.com/made-in-common/diff-match-patch-es#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/antfu/diff-match-patch-es.git"
+    "url": "git+https://github.com/made-in-common/diff-match-patch-es.git"
   },
-  "bugs": "https://github.com/antfu/diff-match-patch-es/issues",
+  "bugs": "https://github.com/made-in-common/diff-match-patch-es/issues",
   "keywords": [
     "diff-match-patch",
     "diff",
