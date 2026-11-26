@@ -85,6 +85,7 @@ export function diffMain(
     diffs.push(createDiff(DIFF_EQUAL, commonsuffix))
 
   diffCleanupMerge(diffs)
+  diffCleanupSurrogatePairs(diffs)
   return diffs
 }
 
@@ -782,6 +783,7 @@ export function diffCleanupSemantic(diffs: Diff[]) {
     }
     pointer++
   }
+  diffCleanupSurrogatePairs(diffs)
 }
 
 const nonAlphaNumericRegex_ = /[^a-z0-9]/i
@@ -1006,6 +1008,7 @@ export function diffCleanupEfficiency(diffs: Diff[], options: DiffMatchPathOptio
 
   if (changes)
     diffCleanupMerge(diffs)
+  diffCleanupSurrogatePairs(diffs)
 }
 
 /**
@@ -1125,6 +1128,132 @@ export function diffCleanupMerge(diffs: Diff[]) {
   // If shifts were made, the diff needs reordering and another shift sweep.
   if (changes)
     diffCleanupMerge(diffs)
+}
+
+/**
+ * Repair UTF-16 surrogate pairs that were split across tuple boundaries.
+ * Diffing operates on code units, so a high surrogate and its low surrogate
+ * can land in different operations. The repair works from the reconstructed
+ * texts rather than guessing from operation order: each damaged region is
+ * replaced by equivalent tuples whose boundaries fall between code points.
+ * This can make a small region coarser, but it never changes either text.
+ * @param {Diff[]} diffs Array of diff tuples.
+ */
+export function diffCleanupSurrogatePairs(diffs: Diff[]) {
+  const boundaryIsClean = (text: string, position: number) => {
+    if (position <= 0 || position >= text.length)
+      return true
+    const before = text.charCodeAt(position - 1)
+    const after = text.charCodeAt(position)
+    return before < 0xD800 || before > 0xDBFF || after < 0xDC00 || after > 0xDFFF
+  }
+  const rebuild = (items: Diff[], forText1: boolean) => {
+    let text = ''
+    for (const [op, part] of items) {
+      if (forText1 ? op !== DIFF_INSERT : op !== DIFF_DELETE)
+        text += part
+    }
+    return text
+  }
+  const append = (items: Diff[], op: DiffOperation, text: string) => {
+    if (!text)
+      return
+    const last = items[items.length - 1]
+    if (last && last[0] === op)
+      last[1] += text
+    else
+      items.push(createDiff(op, text))
+  }
+  const codePointPrefixLength = (a: string, b: string) => {
+    const aPoints = Array.from(a)
+    const bPoints = Array.from(b)
+    let length = 0
+    for (let i = 0; i < Math.min(aPoints.length, bPoints.length) && aPoints[i] === bPoints[i]; i++)
+      length += aPoints[i].length
+    return length
+  }
+  const codePointSuffixLength = (a: string, b: string) => {
+    const aPoints = Array.from(a)
+    const bPoints = Array.from(b)
+    let length = 0
+    for (let i = aPoints.length - 1, j = bPoints.length - 1; i >= 0 && j >= 0 && aPoints[i] === bPoints[j]; i--, j--)
+      length += aPoints[i].length
+    return length
+  }
+  const tuplesForTexts = (text1: string, text2: string) => {
+    const tuples: Diff[] = []
+    const prefixLength = codePointPrefixLength(text1, text2)
+    const middle1 = text1.slice(prefixLength)
+    const middle2 = text2.slice(prefixLength)
+    const suffixLength = codePointSuffixLength(middle1, middle2)
+    const changed1 = middle1.slice(0, middle1.length - suffixLength)
+    const changed2 = middle2.slice(0, middle2.length - suffixLength)
+    const prefix = text1.slice(0, prefixLength)
+    const suffix = middle1.slice(middle1.length - suffixLength)
+
+    append(tuples, DIFF_EQUAL, prefix)
+    append(tuples, DIFF_DELETE, changed1)
+    append(tuples, DIFF_INSERT, changed2)
+    append(tuples, DIFF_EQUAL, suffix)
+    return tuples
+  }
+
+  const text1 = rebuild(diffs, true)
+  const text2 = rebuild(diffs, false)
+  const positions1 = [0]
+  const positions2 = [0]
+  for (const [op, text] of diffs) {
+    positions1.push(positions1[positions1.length - 1] + (op === DIFF_INSERT ? 0 : text.length))
+    positions2.push(positions2[positions2.length - 1] + (op === DIFF_DELETE ? 0 : text.length))
+  }
+  const clean = positions1.map((position1, index) =>
+    boundaryIsClean(text1, position1) && boundaryIsClean(text2, positions2[index]),
+  )
+
+  const windows: Array<{ start: number, end: number }> = []
+  for (let boundary = 1; boundary < diffs.length; boundary++) {
+    if (clean[boundary])
+      continue
+    let start = boundary - 1
+    let end = boundary + 1
+    while (!clean[start])
+      start--
+    while (!clean[end])
+      end++
+
+    const last = windows[windows.length - 1]
+    if (last && start < last.end) {
+      last.start = Math.min(last.start, start)
+      last.end = Math.max(last.end, end)
+    }
+    else {
+      windows.push({ start, end })
+    }
+  }
+
+  if (!windows.length)
+    return
+
+  const repaired: Diff[] = []
+  let cursor = 0
+  for (const window of windows) {
+    for (let i = cursor; i < window.start; i++)
+      append(repaired, diffs[i][0], diffs[i][1])
+
+    const windowDiffs = diffs.slice(window.start, window.end)
+    const windowText1 = rebuild(windowDiffs, true)
+    const windowText2 = rebuild(windowDiffs, false)
+    for (const tuple of tuplesForTexts(windowText1, windowText2))
+      append(repaired, tuple[0], tuple[1])
+    cursor = window.end
+  }
+  for (let i = cursor; i < diffs.length; i++)
+    append(repaired, diffs[i][0], diffs[i][1])
+
+  const replacement = rebuild(repaired, true) === text1 && rebuild(repaired, false) === text2
+    ? repaired
+    : tuplesForTexts(text1, text2)
+  diffs.splice(0, diffs.length, ...replacement)
 }
 
 /**

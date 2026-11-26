@@ -48,6 +48,31 @@ it('patchFromText', () => {
     .toThrowErrorMatchingInlineSnapshot(`[Error: Invalid patch string: Bad]`)
 })
 
+it('patchToText with surrogate pairs', () => {
+  // https://github.com/antfu/diff-match-patch-es/issues/6
+  const patches = patchMake('😀', '😃')
+  const text = patchToText(patches)
+  const results = patchApply(patchFromText(text), '😀')
+  expect(results[0]).toBe('😃')
+  expect(results[1]).toEqual(patches.map(() => true))
+})
+
+it('patchToText keeps surrogate pairs through patchMake cleanups', () => {
+  const patches = patchMake('👍', '😀👍😄')
+  const text = patchToText(patches)
+  const results = patchApply(patchFromText(text), '👍')
+  expect(results[0]).toBe('😀👍😄')
+  expect(results[1]).toEqual(patches.map(() => true))
+})
+
+it('patchToText preserves distinct characters that share a low surrogate', () => {
+  const patches = patchMake('🚀', '🪀')
+  const text = patchToText(patches)
+  const results = patchApply(patchFromText(text), '🚀')
+  expect(results[0]).toBe('🪀')
+  expect(results[1]).toEqual(patches.map(() => true))
+})
+
 it('patchToText', () => {
   let strp = '@@ -21,18 +22,17 @@\n jump\n-s\n+ed\n  over \n-the\n+a\n  laz\n'
   let p = patchFromText(strp)
@@ -75,6 +100,17 @@ it('patchAddContext', () => {
   p = patchFromText('@@ -3 +3,2 @@\n-e\n+at\n')[0]
   patchAddContext(p, 'The quick brown fox jumps.', options)
   expect(p.toString()).toBe('@@ -1,7 +1,8 @@\n Th\n-e\n+at\n  qui\n')
+
+  // Context boundaries grow outward when they would cut a surrogate pair.
+  const pairPatch = createPatch()
+  pairPatch.start1 = 6
+  pairPatch.start2 = 6
+  pairPatch.length1 = 1
+  pairPatch.length2 = 1
+  pairPatch.diffs = [[DIFF_DELETE, 'e'], [DIFF_INSERT, 'E']]
+  patchAddContext(pairPatch, 'a😀bcdefgh😀z', options)
+  expect(pairPatch.diffs[0]).toEqual([DIFF_EQUAL, '😀bcd'])
+  expect(pairPatch.diffs[pairPatch.diffs.length - 1]).toEqual([DIFF_EQUAL, 'fgh😀'])
 
   // Same, but with ambiguity.
   p = patchFromText('@@ -3 +3,2 @@\n-e\n+at\n')[0]

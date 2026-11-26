@@ -520,6 +520,44 @@ it('diffDelta', () => {
   expect(diffFromDelta('', delta)).toEqual(diffs)
 })
 
+it('diffMain does not split surrogate pairs', () => {
+  // https://github.com/antfu/diff-match-patch-es/issues/6
+  const diffs = diffMain('😀', '😃')
+
+  // No tuple may hold an unpaired surrogate, so that the texts remain URI-encodable.
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+
+  // The diff still reconstructs both texts.
+  expect(diffRebuildTexts(diffs)).toEqual(['😀', '😃'])
+
+  // The delta round-trips.
+  const delta = diffToDelta(diffs)
+  expect(diffFromDelta('😀', delta)).toEqual(diffs)
+})
+
+it('diffMain merges equal operations emptied by surrogate cleanup', () => {
+  const diffs = diffMain('b😃', '👍🏽')
+
+  for (let i = 1; i < diffs.length; i++)
+    expect(diffs[i][0]).not.toBe(diffs[i - 1][0])
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+  expect(diffRebuildTexts(diffs)).toEqual(['b😃', '👍🏽'])
+})
+
+it('diffMain preserves distinct characters that share a low surrogate', () => {
+  // U+1F680 and U+1FA80 have different high surrogates but the same low surrogate.
+  const diffs = diffMain('🚀', '🪀')
+
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+  expect(diffRebuildTexts(diffs)).toEqual(['🚀', '🪀'])
+
+  const delta = diffToDelta(diffs)
+  expect(diffFromDelta('🚀', delta)).toEqual(diffs)
+})
+
 it('diffXIndex', () => {
   // Translate a location in text1 to text2.
   // Translation on equality.
