@@ -546,6 +546,18 @@ it('diffMain merges equal operations emptied by surrogate cleanup', () => {
   expect(diffRebuildTexts(diffs)).toEqual(['b😃', '👍🏽'])
 })
 
+it('diffMain preserves distinct characters that share a low surrogate', () => {
+  // U+1F680 and U+1FA80 have different high surrogates but the same low surrogate.
+  const diffs = diffMain('🚀', '🪀')
+
+  for (const [, text] of diffs)
+    expect(() => encodeURI(text)).not.toThrow()
+  expect(diffRebuildTexts(diffs)).toEqual(['🚀', '🪀'])
+
+  const delta = diffToDelta(diffs)
+  expect(diffFromDelta('🚀', delta)).toEqual(diffs)
+})
+
 it('diffXIndex', () => {
   // Translate a location in text1 to text2.
   // Translation on equality.

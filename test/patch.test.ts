@@ -65,6 +65,14 @@ it('patchToText keeps surrogate pairs through patchMake cleanups', () => {
   expect(results[1]).toEqual(patches.map(() => true))
 })
 
+it('patchToText preserves distinct characters that share a low surrogate', () => {
+  const patches = patchMake('🚀', '🪀')
+  const text = patchToText(patches)
+  const results = patchApply(patchFromText(text), '🚀')
+  expect(results[0]).toBe('🪀')
+  expect(results[1]).toEqual(patches.map(() => true))
+})
+
 it('patchToText', () => {
   let strp = '@@ -21,18 +22,17 @@\n jump\n-s\n+ed\n  over \n-the\n+a\n  laz\n'
   let p = patchFromText(strp)
